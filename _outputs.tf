@@ -14,3 +14,8 @@
 
 # id - The API mapping identifier.
 # resource "aws_apigatewayv2_api_mapping" "this" {
+
+
+#resource "aws_apigatewayv2_deployment" "this" {
+# id - The deployment identifier.
+# auto_deployed - Whether the deployment was automatically released.

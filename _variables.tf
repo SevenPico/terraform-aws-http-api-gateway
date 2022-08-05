@@ -1,44 +1,55 @@
 variable "description" {
-  type = string
+  type    = string
   default = ""
 }
 
 
 variable "disable_execute_api_endpoint" {
-  type = bool
+  type    = bool
   default = true
 }
 
 
 variable "fail_on_warnings" {
-  type = bool
+  type    = bool
   default = false
 }
 
 
 variable "route_selection_expression" {
-  type = string
+  type    = string
   default = ""
 }
 
 
 variable "version" {
-  type = string
+  type    = string
   default = "0.0.1"
+}
+
+variable "cloudwatch_logs_retention_in_days" {
+  description = <<EOF
+  Specifies the number of days you want to retain log events in the specified log group. Possible values are:
+  1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653, and 0. If you select 0, the events in the
+  log group are always retained and never expire.
+  EOF
+  type        = number
+  default     = 0
 }
 
 variable "cors_configuration" {
   type = object({
     allow_credentials = optional(bool)         # (Optional) Whether credentials are included in the CORS request.
-    allow_headers     = optional(map(string))  # (Optional) The set of allowed HTTP headers.
+    allow_headers     = optional(list(string)) # (Optional) The set of allowed HTTP headers.
     allow_methods     = optional(list(string)) # (Optional) The set of allowed HTTP methods.
     allow_origins     = optional(list(string)) # (Optional) The set of allowed origins.
-    expose_headers    = optional(map(string))  # (Optional) The set of exposed HTTP headers.
+    expose_headers    = optional(list(string)) # (Optional) The set of exposed HTTP headers.
     max_age           = optional(number)       # (Optional) The number of seconds that the browser should cache preflight request results.
   })
+  default = null
 }
 
-variable "targets" {
+variable "integrations" {
   type = list(object({
     type                          = string
     method                        = string
@@ -46,7 +57,6 @@ variable "targets" {
     request_parameters            = optional(map(bool))
     response_parameters           = optional(map(number)) # FIXME
     credentials_arn               = optional(string)
-    content_handling_strategy     = optional(string)
     description                   = optional(string)
     payload_format_version        = optional(string)
     template_selection_expression = optional(string)
@@ -55,15 +65,14 @@ variable "targets" {
     uri                           = optional(string)
     tls_config                    = optional(string)
   }))
+  default = []
 }
 
 variable "routes" {
-  type = list(object({
-    key                        = string
+  type = map(object({
     authorizer_key             = optional(string)
-    model_selection_expression = optional(string)
     operation_name             = optional(string)
-    target_key                 = optional(string)
+    integration_key            = optional(string)
     request_parameters         = optional(map(bool))
     response = optional(object({
       route_response_key         = optional(string)
@@ -88,6 +97,7 @@ variable "authorizers" {
       issuer   = string
     }))
   }))
+  default = []
 }
 
 
