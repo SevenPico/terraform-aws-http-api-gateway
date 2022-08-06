@@ -3,7 +3,6 @@ variable "description" {
   default = ""
 }
 
-
 variable "disable_execute_api_endpoint" {
   type    = bool
   default = true
@@ -22,7 +21,7 @@ variable "route_selection_expression" {
 }
 
 
-variable "version" {
+variable "api_version" {
   type    = string
   default = "0.0.1"
 }
@@ -38,66 +37,67 @@ variable "cloudwatch_logs_retention_in_days" {
 }
 
 variable "cors_configuration" {
-  type = object({
-    allow_credentials = optional(bool)         # (Optional) Whether credentials are included in the CORS request.
-    allow_headers     = optional(list(string)) # (Optional) The set of allowed HTTP headers.
-    allow_methods     = optional(list(string)) # (Optional) The set of allowed HTTP methods.
-    allow_origins     = optional(list(string)) # (Optional) The set of allowed origins.
-    expose_headers    = optional(list(string)) # (Optional) The set of exposed HTTP headers.
-    max_age           = optional(number)       # (Optional) The number of seconds that the browser should cache preflight request results.
-  })
+  type = any
+  # type = object({
+  #   allow_credentials = optional(bool)
+  #   allow_headers     = optional(list(string))
+  #   allow_methods     = optional(list(string))
+  #   allow_origins     = optional(list(string))
+  #   expose_headers    = optional(list(string))
+  #   max_age           = optional(number)
+  # })
   default = null
 }
 
-variable "integrations" {
-  type = list(object({
-    type                          = string
-    method                        = string
-    vpc_link_key                  = optional(string)
-    request_parameters            = optional(map(bool))
-    response_parameters           = optional(map(number)) # FIXME
-    credentials_arn               = optional(string)
-    description                   = optional(string)
-    payload_format_version        = optional(string)
-    template_selection_expression = optional(string)
-    server_name_to_verify         = optional(string)
-    subtype                       = optional(string)
-    uri                           = optional(string)
-    tls_config                    = optional(string)
-  }))
-  default = []
-}
-
 variable "routes" {
-  type = map(object({
-    authorizer_key             = optional(string)
-    operation_name             = optional(string)
-    integration_key            = optional(string)
-    request_parameters         = optional(map(bool))
-    response = optional(object({
-      route_response_key         = optional(string)
-      model_selection_expression = optional(string)
-      response_models            = optional(any)
-    }))
-  }))
+  type = map(any)
+  # type = map(object({
+  #   type                    = string
+  #   authorizer_key          = optional(string)
+  #   operation_name          = optional(string)
+  #   credentials_arn         = optional(string)
+  #   payload_format_version  = optional(string)
+  #   result_ttl_in_seconds   = optional(number)
+  #   uri                     = optional(string)
+  #   enable_simple_responses = optional(bool)
+  #   identity_sources        = optional(string)
+  #   jwt_configuration = optional(object({
+  #     audience = list(string)
+  #     issuer   = string
+  #   }))
+  #   # TODO
+  #   # response = optional(object({
+  #   #   route_response_key = optional(string)
+  #   #   response_models    = optional(any)
+  #   # }))
+  # }))
+  default = {}
 }
 
 variable "authorizers" {
-  type = list(object({
-    key                     = string
-    type                    = string
-    credentials_arn         = optional(string)
-    payload_format_version  = optional(string)
-    result_ttl_in_seconds   = optional(number)
-    uri                     = optional(string)
-    enable_simple_responses = optional(bool)
-    identity_sources        = optional(string)
-    jwt_configuration = optional(object({
-      audience = list(string)
-      issuer   = string
-    }))
+  type = map(any)
+  # type = map(object({
+  #   type                    = string
+  #   credentials_arn         = optional(string)
+  #   payload_format_version  = optional(string)
+  #   result_ttl_in_seconds   = optional(number)
+  #   uri                     = optional(string)
+  #   enable_simple_responses = optional(bool)
+  #   identity_sources        = optional(string)
+  #   jwt_configuration = optional(object({
+  #     audience = list(string)
+  #     issuer   = string
+  #   }))
+  # }))
+  default = {}
+}
+
+variable "vpc_links" {
+  type = map(object({
+    security_group_ids = list(string)
+    subnet_ids         = list(string)
   }))
-  default = []
+  default = {}
 }
 
 
@@ -124,3 +124,19 @@ variable "acm_certificate_arn" {
   description = "Required if dns_enabled is true."
 }
 
+variable "enable_auto_deploy" {
+  type        = bool
+  default     = false
+  description = "Trigger new depoloyment on update to API."
+}
+
+variable "access_log_format" {
+  description = "Format for CloudWatch access logs."
+  type        = string
+  default = " {\n\t\"requestTime\": \"$context.requestTime\",\n\t\"requestId\": \"$context.requestId\",\n\t\"httpMethod\": \"$context.httpMethod\",\n\t\"path\": \"$context.path\",\n\t\"resourcePath\": \"$context.resourcePath\",\n\t\"status\": $context.status,\n\t\"responseLatency\": $context.responseLatency,\n \"xrayTraceId\": \"$context.xrayTraceId\",\n \"integrationRequestId\": \"$context.integration.requestId\",\n\t\"functionResponseStatus\": \"$context.integration.status\",\n \"integrationLatency\": \"$context.integration.latency\",\n\t\"integrationServiceStatus\": \"$context.integration.integrationStatus\",\n \"authorizeResultStatus\": \"$context.authorize.status\",\n\t\"authorizerServiceStatus\": \"$context.authorizer.status\",\n\t\"authorizerLatency\": \"$context.authorizer.latency\",\n\t\"authorizerRequestId\": \"$context.authorizer.requestId\",\n \"ip\": \"$context.identity.sourceIp\",\n\t\"userAgent\": \"$context.identity.userAgent\",\n\t\"principalId\": \"$context.authorizer.principalId\",\n\t\"cognitoUser\": \"$context.identity.cognitoIdentityId\",\n \"user\": \"$context.identity.user\"\n}\n"
+}
+
+variable "stage_variables" {
+  type = map(string)
+  default = {}
+}
