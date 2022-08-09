@@ -45,7 +45,7 @@ resource "aws_apigatewayv2_route" "this" {
 
   api_id               = local.api_id
   authorization_scopes = try(var.authorizers[each.value.authorizer_key].scopes, null)
-  authorization_type   = try(aws_apigatewayv2_authorizer.this[each.value.authorizer_key].type, null)
+  authorization_type   = try(var.authorizers[each.value.authorizer_key].type, null) == "REQUEST" ? "CUSTOM" : try(var.authorizers[each.value.authorizer_key].type, null)
   authorizer_id        = try(aws_apigatewayv2_authorizer.this[each.value.authorizer_key].id, null)
   operation_name       = try(each.value.operation_name, null)
   route_key            = each.key
@@ -163,6 +163,7 @@ resource "aws_apigatewayv2_stage" "this" {
   tags                  = module.this.tags
   client_certificate_id = null # websocket only
 
+  # FIXME - optional access logging
   access_log_settings {
     destination_arn = one(aws_cloudwatch_log_group.this[*].arn)
     format          = var.access_log_format

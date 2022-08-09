@@ -33,7 +33,7 @@ variable "cloudwatch_logs_retention_in_days" {
   log group are always retained and never expire.
   EOF
   type        = number
-  default     = 0
+  default     = 7
 }
 
 variable "cors_configuration" {
@@ -121,13 +121,18 @@ variable "enable_auto_deploy" {
   description = "Trigger new depoloyment on update to API."
 }
 
+variable "stage_variables" {
+  type = map(string)
+  default = {}
+}
+
+
 variable "access_log_format" {
   description = "Format for CloudWatch access logs."
   type        = string
   default = "$context.identity.sourceIp - - [$context.requestTime] \"$context.httpMethod $context.routeKey $context.protocol\" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage"
 }
 
-variable "stage_variables" {
-  type = map(string)
-  default = {}
-}
+
+
+
