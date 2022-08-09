@@ -17,7 +17,7 @@ variable "fail_on_warnings" {
 
 variable "route_selection_expression" {
   type    = string
-  default = ""
+  default = "$request.method $request.path"
 }
 
 
@@ -53,24 +53,15 @@ variable "routes" {
   type = map(any)
   # type = map(object({
   #   type                    = string
+  #   integration_key         = string
   #   authorizer_key          = optional(string)
   #   operation_name          = optional(string)
-  #   credentials_arn         = optional(string)
-  #   payload_format_version  = optional(string)
-  #   result_ttl_in_seconds   = optional(number)
-  #   uri                     = optional(string)
-  #   enable_simple_responses = optional(bool)
-  #   identity_sources        = optional(string)
-  #   jwt_configuration = optional(object({
-  #     audience = list(string)
-  #     issuer   = string
-  #   }))
-  #   # TODO
-  #   # response = optional(object({
-  #   #   route_response_key = optional(string)
-  #   #   response_models    = optional(any)
-  #   # }))
   # }))
+  default = {}
+}
+
+variable "integrations" {
+  type = map(any)
   default = {}
 }
 
@@ -133,7 +124,7 @@ variable "enable_auto_deploy" {
 variable "access_log_format" {
   description = "Format for CloudWatch access logs."
   type        = string
-  default = " {\n\t\"requestTime\": \"$context.requestTime\",\n\t\"requestId\": \"$context.requestId\",\n\t\"httpMethod\": \"$context.httpMethod\",\n\t\"path\": \"$context.path\",\n\t\"resourcePath\": \"$context.resourcePath\",\n\t\"status\": $context.status,\n\t\"responseLatency\": $context.responseLatency,\n \"xrayTraceId\": \"$context.xrayTraceId\",\n \"integrationRequestId\": \"$context.integration.requestId\",\n\t\"functionResponseStatus\": \"$context.integration.status\",\n \"integrationLatency\": \"$context.integration.latency\",\n\t\"integrationServiceStatus\": \"$context.integration.integrationStatus\",\n \"authorizeResultStatus\": \"$context.authorize.status\",\n\t\"authorizerServiceStatus\": \"$context.authorizer.status\",\n\t\"authorizerLatency\": \"$context.authorizer.latency\",\n\t\"authorizerRequestId\": \"$context.authorizer.requestId\",\n \"ip\": \"$context.identity.sourceIp\",\n\t\"userAgent\": \"$context.identity.userAgent\",\n\t\"principalId\": \"$context.authorizer.principalId\",\n\t\"cognitoUser\": \"$context.identity.cognitoIdentityId\",\n \"user\": \"$context.identity.user\"\n}\n"
+  default = "$context.identity.sourceIp - - [$context.requestTime] \"$context.httpMethod $context.routeKey $context.protocol\" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage"
 }
 
 variable "stage_variables" {

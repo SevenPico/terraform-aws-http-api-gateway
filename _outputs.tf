@@ -2,7 +2,10 @@
 # one(aws_apigatewayv2_api.this[*].id)
 # one(aws_apigatewayv2_api.this[*].api_endpoint)
 # one(aws_apigatewayv2_api.this[*].arn)
-# one(aws_apigatewayv2_api.this[*].execution_arn)
+output "execution_arn" {
+  value = one(aws_apigatewayv2_api.this[*].execution_arn)
+}
+
 # one(aws_apigatewayv2_api.this[*].tags_all)
 
 #resource "aws_apigatewayv2_domain_name" "this" {

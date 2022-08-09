@@ -19,13 +19,16 @@ resource "aws_apigatewayv2_api" "this" {
   route_key                    = null # quick-create only
   target                       = null # quick-create only
 
-  cors_configuration {
-    allow_credentials = try(var.cors_configuration.allow_credentials, null)
-    allow_headers     = try(var.cors_configuration.allow_headers, null)
-    allow_methods     = try(var.cors_configuration.allow_methods, null)
-    allow_origins     = try(var.cors_configuration.allow_origins, null)
-    expose_headers    = try(var.cors_configuration.expose_headers, null)
-    max_age           = try(var.cors_configuration.max_age, null)
+  dynamic "cors_configuration" {
+    for_each = toset(var.cors_configuration != null ?  [1] : [])
+    content {
+      allow_credentials = try(var.cors_configuration.allow_credentials, null)
+      allow_headers     = try(var.cors_configuration.allow_headers, null)
+      allow_methods     = try(var.cors_configuration.allow_methods, null)
+      allow_origins     = try(var.cors_configuration.allow_origins, null)
+      expose_headers    = try(var.cors_configuration.expose_headers, null)
+      max_age           = try(var.cors_configuration.max_age, null)
+    }
   }
 }
 
@@ -41,12 +44,12 @@ resource "aws_apigatewayv2_route" "this" {
   for_each = module.this.enabled ? var.routes : {}
 
   api_id               = local.api_id
-  authorization_scopes = try(var.authorizers[each.value.authorizer.key].scopes, null)
+  authorization_scopes = try(var.authorizers[each.value.authorizer_key].scopes, null)
   authorization_type   = try(aws_apigatewayv2_authorizer.this[each.value.authorizer_key].type, null)
   authorizer_id        = try(aws_apigatewayv2_authorizer.this[each.value.authorizer_key].id, null)
   operation_name       = try(each.value.operation_name, null)
   route_key            = each.key
-  target               = aws_apigatewayv2_integration.this[each.key].id
+  target               = "integrations/${aws_apigatewayv2_integration.this[each.value.integration_key].id}"
 
   api_key_required                    = null # websocket only
   model_selection_expression          = null # websocket only
@@ -59,7 +62,7 @@ resource "aws_apigatewayv2_route" "this" {
 # Integrations
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_integration" "this" {
-  for_each = module.this.enabled ? var.routes : {}
+  for_each = module.this.enabled ? var.integrations : {}
 
   api_id                        = local.api_id
   integration_type              = each.value.type
@@ -107,8 +110,9 @@ resource "aws_apigatewayv2_vpc_link" "this" {
   name               = each.key
   security_group_ids = each.value.security_group_ids
   subnet_ids         = each.value.subnet_ids
-  tags = module.this.tags
+  tags               = module.this.tags
 }
+
 
 
 # -----------------------------------------------------------------------------
@@ -145,10 +149,41 @@ resource "aws_apigatewayv2_authorizer" "this" {
 
 
 # -----------------------------------------------------------------------------
+# Stage
+# -----------------------------------------------------------------------------
+resource "aws_apigatewayv2_stage" "this" {
+  count = module.this.enabled ? 1 : 0
+
+  api_id                = local.api_id
+  auto_deploy           = var.enable_auto_deploy
+  deployment_id         = var.enable_auto_deploy ? one(aws_apigatewayv2_deployment.this[*].id) : null
+  description           = var.description
+  name                  = "$default"
+  stage_variables       = var.stage_variables
+  tags                  = module.this.tags
+  client_certificate_id = null # websocket only
+
+  access_log_settings {
+    destination_arn = one(aws_cloudwatch_log_group.this[*].arn)
+    format          = var.access_log_format
+  }
+
+  # FIXME - null defaults don't work
+  # default_route_settings {
+  #   detailed_metrics_enabled = null # TODO
+  #   throttling_burst_limit   = null # TODO
+  #   throttling_rate_limit    = null # TODO
+  #   data_trace_enabled       = null # websocket only
+  #   logging_level            = null # websocket only
+  # }
+}
+
+
+# -----------------------------------------------------------------------------
 # Deployment
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_deployment" "this" {
-  count = module.this.enabled ? 1 : 0
+  count = module.this.enabled && !var.enable_auto_deploy ? 1 : 0
 
   api_id      = local.api_id
   description = var.description
@@ -161,36 +196,6 @@ resource "aws_apigatewayv2_deployment" "this" {
 
   lifecycle {
     create_before_destroy = true
-  }
-}
-
-
-# -----------------------------------------------------------------------------
-# Stage
-# -----------------------------------------------------------------------------
-resource "aws_apigatewayv2_stage" "this" {
-  count = module.this.enabled ? 1 : 0
-
-  api_id                = local.api_id
-  auto_deploy           = var.enable_auto_deploy
-  deployment_id         = one(aws_apigatewayv2_deployment.this[*].id)
-  description           = var.description
-  name                  = module.this.id
-  stage_variables       = var.stage_variables
-  tags                  = module.this.tags
-  client_certificate_id = null # websocket only
-
-  access_log_settings {
-    destination_arn = one(aws_cloudwatch_log_group.this[*].arn)
-    format          = var.access_log_format
-  }
-
-  default_route_settings {
-    detailed_metrics_enabled = false # TODO
-    throttling_burst_limit   = null  # TODO
-    throttling_rate_limit    = null  # TODO
-    data_trace_enabled       = false # websocket only
-    logging_level            = "OFF" # websocket only
   }
 }
 
@@ -243,7 +248,7 @@ resource "aws_apigatewayv2_api_mapping" "this" {
   api_id          = local.api_id
   api_mapping_key = null # websocket only
   domain_name     = one(aws_apigatewayv2_domain_name.this[*].domain_name)
-  stage           = one(aws_apigatewayv2_stage.this[*].id) # FIXME
+  stage           = one(aws_apigatewayv2_stage.this[*].id)
 }
 
 resource "aws_route53_record" "this" {
@@ -258,26 +263,4 @@ resource "aws_route53_record" "this" {
     zone_id                = one(aws_apigatewayv2_domain_name.this[*].domain_name_configuration[0].hosted_zone_id)
     evaluate_target_health = false
   }
-}
-
-
-# -----------------------------------------------------------------------------
-# Exports
-# -----------------------------------------------------------------------------
-data "aws_apigatewayv2_export" "json" {
-  api_id             = local.api_id
-  export_version     = "1.0"
-  include_extensions = true
-  output_type        = "JSON"
-  specification      = "OAS30"
-  stage_name         = one(aws_apigatewayv2_stage.this[*].name)
-}
-
-data "aws_apigatewayv2_export" "yaml" {
-  api_id             = local.api_id
-  export_version     = "1.0"
-  include_extensions = true
-  output_type        = "YAML"
-  specification      = "OAS30"
-  stage_name         = one(aws_apigatewayv2_stage.this[*].name)
 }
