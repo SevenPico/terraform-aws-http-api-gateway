@@ -67,7 +67,7 @@ resource "aws_apigatewayv2_integration" "this" {
   api_id                        = local.api_id
   integration_type              = each.value.type
   connection_type               = can(each.value.vpc_link_key) ? "VPC_LINK" : "INTERNET"
-  connection_id                 = try(each.value.type, "") == "VPC_LINK" ? aws_apigatewayv2_vpc_link.this[each.value.vpc_link_key].id : null
+  connection_id                 = can(each.value.vpc_link_key) ? aws_apigatewayv2_vpc_link.this[each.value.vpc_link_key].id : null
   credentials_arn               = try(each.value.credentials_arn, null)
   description                   = try(each.value.description, null)
   integration_method            = try(each.value.method, null)
