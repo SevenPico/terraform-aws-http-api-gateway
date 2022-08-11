@@ -103,10 +103,9 @@ variable "dns_name" {
   description = "Required if dns_enabled is true."
 }
 
-variable "zone_id" {
-  type        = string
-  default     = ""
-  description = "Required if dns_enabled is true."
+variable "route53_zone_ids" {
+  type        = list(string)
+  default     = []
 }
 
 variable "acm_certificate_arn" {

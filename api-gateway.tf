@@ -253,11 +253,11 @@ resource "aws_apigatewayv2_api_mapping" "this" {
 }
 
 resource "aws_route53_record" "this" {
-  count = module.dns_meta.enabled ? 1 : 0
+  for_each = toset(module.dns_meta.enabled ? var.route53_zone_ids : [])
 
   name    = one(aws_apigatewayv2_domain_name.this[*].domain_name)
   type    = "A"
-  zone_id = var.zone_id
+  zone_id = each.value
 
   alias {
     name                   = one(aws_apigatewayv2_domain_name.this[*].domain_name_configuration[0].target_domain_name)
