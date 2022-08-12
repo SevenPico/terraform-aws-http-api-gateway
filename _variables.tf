@@ -108,6 +108,11 @@ variable "route53_zone_ids" {
   default     = []
 }
 
+variable "route53_zone_ids_count" {
+  type        = number
+  default     = 0
+}
+
 variable "acm_certificate_arn" {
   type        = string
   default     = ""
