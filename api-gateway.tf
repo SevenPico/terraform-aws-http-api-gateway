@@ -11,7 +11,8 @@ resource "aws_apigatewayv2_api" "this" {
   disable_execute_api_endpoint = var.disable_execute_api_endpoint
   fail_on_warnings             = var.fail_on_warnings
   route_selection_expression   = var.route_selection_expression
-  version                      = var.api_version
+
+
 
   body                         = null # don't use
   api_key_selection_expression = null # websocket only

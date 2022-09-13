@@ -1,24 +1,27 @@
-
-# one(aws_apigatewayv2_api.this[*].id)
-# one(aws_apigatewayv2_api.this[*].api_endpoint)
-# one(aws_apigatewayv2_api.this[*].arn)
 output "execution_arn" {
-  value = one(aws_apigatewayv2_api.this[*].execution_arn)
+  value = try(aws_apigatewayv2_api.this[0].execution_arn, "")
 }
 
-# one(aws_apigatewayv2_api.this[*].tags_all)
+output "api_endpoint" {
+  value = try(aws_apigatewayv2_api.this[0].api_endpoint, "")
+}
 
-#resource "aws_apigatewayv2_domain_name" "this" {
-# api_mapping_selection_expression - API mapping selection expression for the domain name.
-# arn - ARN of the domain name.
-# id - Domain name identifier.
-# tags_all - Map of tags assigned to the resource, including those inherited from the provider default_tags configuration block.
+output "arn" {
+  value = try(aws_apigatewayv2_api.this[0].arn, "")
+}
 
+output "id" {
+  value = try(aws_apigatewayv2_api.this[0].id, "")
+}
 
-# id - The API mapping identifier.
-# resource "aws_apigatewayv2_api_mapping" "this" {
+output "domain_name" {
+  value = try(aws_apigatewayv2_domain_name.this[0].domain_name, "")
+}
 
+output "regional_domain_name" {
+  value = try(aws_apigatewayv2_domain_name.this[0].domain_name_configuration[0].target_domain_name, "")
+}
 
-#resource "aws_apigatewayv2_deployment" "this" {
-# id - The deployment identifier.
-# auto_deployed - Whether the deployment was automatically released.
+output "regional_zone_id" {
+  value = try(aws_apigatewayv2_domain_name.this[0].domain_name_configuration[0].hosted_zone_id, "")
+}
