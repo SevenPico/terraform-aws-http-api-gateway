@@ -21,7 +21,7 @@ resource "aws_apigatewayv2_api" "this" {
   target                       = null # quick-create only
 
   dynamic "cors_configuration" {
-    for_each = toset(var.cors_configuration != null ?  [1] : [])
+    for_each = toset(var.cors_configuration != null ? [1] : [])
     content {
       allow_credentials = try(var.cors_configuration.allow_credentials, null)
       allow_headers     = try(var.cors_configuration.allow_headers, null)
@@ -208,7 +208,7 @@ resource "aws_apigatewayv2_deployment" "this" {
 resource "aws_cloudwatch_log_group" "this" {
   count = module.this.enabled ? 1 : 0
 
-  name              = "/aws/apigateway/${module.this.id}"
+  name              = "/aws/vendedlogs/apigateway/${module.this.id}"
   retention_in_days = var.cloudwatch_logs_retention_in_days
   tags              = module.this.tags
 }
