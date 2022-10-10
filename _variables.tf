@@ -1,3 +1,8 @@
+variable "context" {
+  type    = any
+  default = null
+}
+
 variable "description" {
   type    = string
   default = ""
@@ -61,7 +66,7 @@ variable "routes" {
 }
 
 variable "integrations" {
-  type = map(any)
+  type    = map(any)
   default = {}
 }
 
@@ -85,8 +90,8 @@ variable "authorizers" {
 
 variable "vpc_links" {
   type = map(object({
-    security_group_ids = list(string)
-    subnet_ids         = list(string)
+    vpc_id     = string
+    subnet_ids = list(string)
   }))
   default = {}
 }
@@ -104,13 +109,13 @@ variable "dns_name" {
 }
 
 variable "route53_zone_ids" {
-  type        = list(string)
-  default     = []
+  type    = list(string)
+  default = []
 }
 
 variable "route53_zone_ids_count" {
-  type        = number
-  default     = 0
+  type    = number
+  default = 0
 }
 
 variable "acm_certificate_arn" {
@@ -126,17 +131,18 @@ variable "enable_auto_deploy" {
 }
 
 variable "stage_variables" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }
 
 
+variable "access_logging_enabled" {
+  type    = bool
+  default = true
+}
+
 variable "access_log_format" {
   description = "Format for CloudWatch access logs."
   type        = string
-  default = "$context.identity.sourceIp - - [$context.requestTime] \"$context.httpMethod $context.routeKey $context.protocol\" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage"
+  default     = "$context.identity.sourceIp - - [$context.requestTime] \"$context.httpMethod $context.routeKey $context.protocol\" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage"
 }
-
-
-
-
