@@ -1,16 +1,12 @@
 # -----------------------------------------------------------------------------
 # HTTP API Gateway
 # -----------------------------------------------------------------------------
-data "context" "this" {
-  context = var.context
-}
-
 resource "aws_apigatewayv2_api" "this" {
-  count = data.context.this.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
 
   protocol_type                = "HTTP"
-  name                         = data.context.this.id
-  tags                         = data.context.this.tags
+  name                         = module.context.id
+  tags                         = module.context.tags
   description                  = var.description
   disable_execute_api_endpoint = var.disable_execute_api_endpoint
   fail_on_warnings             = var.fail_on_warnings
@@ -44,7 +40,7 @@ locals {
 # Routes
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_route" "this" {
-  for_each = data.context.this.enabled ? var.routes : {}
+  for_each = module.context.enabled ? var.routes : {}
 
   api_id               = local.api_id
   authorization_scopes = try(var.authorizers[each.value.authorizer_key].scopes, null)
@@ -65,7 +61,7 @@ resource "aws_apigatewayv2_route" "this" {
 # Integrations
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_integration" "this" {
-  for_each = data.context.this.enabled ? var.integrations : {}
+  for_each = module.context.enabled ? var.integrations : {}
 
   api_id                        = local.api_id
   integration_type              = each.value.type
@@ -108,19 +104,18 @@ resource "aws_apigatewayv2_integration" "this" {
 # VPC Links
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_vpc_link" "this" {
-  for_each = data.context.this.enabled ? var.vpc_links : {}
+  for_each = module.context.enabled ? var.vpc_links : {}
 
   name               = each.key
   security_group_ids = [module.vpc_link_security_group[each.key].id]
   subnet_ids         = each.value.subnet_ids
-  tags               = data.context.this.tags
+  tags               = module.context.tags
 }
 
 module "vpc_link_security_group" {
-  for_each = data.context.this.enabled ? var.vpc_links : {}
-
-  source  = "app.terraform.io/SevenPico/vpc/aws//modules/security-group"
-  version = "0.0.2"
+  for_each = module.context.enabled ? var.vpc_links : {}
+  source  = "registry.terraform.io/SevenPicoForks/security-group/aws"
+  version = "3.0.0"
 
   allow_all_egress              = true
   create_before_destroy         = true
@@ -141,8 +136,8 @@ module "vpc_link_security_group" {
       cidr_blocks = ["0.0.0.0/0"]
       type        = "ingress"
       protocol    = "tcp"
-      from_port   = var.dns_enabled ? 443 : 80
-      to_port     = var.dns_enabled ? 443 : 80
+      from_port   = var.dns_name != "" ? 443 : 80
+      to_port     = var.dns_name != "" ? 443 : 80
     }]
   }
 }
@@ -152,7 +147,7 @@ module "vpc_link_security_group" {
 # Authorizers
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_authorizer" "this" {
-  for_each = data.context.this.enabled ? var.authorizers : {}
+  for_each = module.context.enabled ? var.authorizers : {}
 
   api_id                            = local.api_id
   authorizer_type                   = each.value.type
@@ -185,7 +180,7 @@ resource "aws_apigatewayv2_authorizer" "this" {
 # Stage
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_stage" "this" {
-  count = data.context.this.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
 
   api_id                = local.api_id
   auto_deploy           = var.enable_auto_deploy
@@ -193,7 +188,7 @@ resource "aws_apigatewayv2_stage" "this" {
   description           = var.description
   name                  = "$default"
   stage_variables       = var.stage_variables
-  tags                  = data.context.this.tags
+  tags                  = module.context.tags
   client_certificate_id = null # websocket only
 
   dynamic "access_log_settings" {
@@ -215,11 +210,11 @@ resource "aws_apigatewayv2_stage" "this" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  count = data.context.this.enabled && var.access_logging_enabled ? 1 : 0
+  count = module.context.enabled && var.access_logging_enabled ? 1 : 0
 
-  name              = "/aws/vendedlogs/apigateway/${data.context.this.id}"
+  name              = "/aws/vendedlogs/apigateway/${module.context.id}"
   retention_in_days = var.cloudwatch_logs_retention_in_days
-  tags              = data.context.this.tags
+  tags              = module.context.tags
 }
 
 
@@ -227,7 +222,7 @@ resource "aws_cloudwatch_log_group" "this" {
 # Deployment
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_deployment" "this" {
-  count = data.context.this.enabled && !var.enable_auto_deploy ? 1 : 0
+  count = module.context.enabled && !var.enable_auto_deploy ? 1 : 0
 
   api_id      = local.api_id
   description = var.description
@@ -247,17 +242,11 @@ resource "aws_apigatewayv2_deployment" "this" {
 # -----------------------------------------------------------------------------
 # DNS
 # -----------------------------------------------------------------------------
-data "context" "dns" {
-  context    = data.context.this
-  enabled    = var.dns_enabled
-  attributes = ["dns"]
-}
-
 resource "aws_apigatewayv2_domain_name" "this" {
-  count = data.context.dns.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
 
   domain_name = var.dns_name
-  tags        = data.context.dns.tags
+  tags        = module.context.tags
 
   domain_name_configuration {
     certificate_arn                        = var.acm_certificate_arn
@@ -273,7 +262,7 @@ resource "aws_apigatewayv2_domain_name" "this" {
 }
 
 resource "aws_apigatewayv2_api_mapping" "this" {
-  count = data.context.dns.enabled ? 1 : 0
+  count = module.context.enabled ? 1 : 0
 
   api_id          = local.api_id
   api_mapping_key = null # websocket only
@@ -282,7 +271,7 @@ resource "aws_apigatewayv2_api_mapping" "this" {
 }
 
 resource "aws_route53_record" "this" {
-  count = data.context.dns.enabled ? var.route53_zone_ids_count : 0
+  count = module.context.enabled ? var.route53_zone_ids_count : 0
 
   name    = one(aws_apigatewayv2_domain_name.this[*].domain_name)
   type    = "A"
