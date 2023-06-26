@@ -137,8 +137,8 @@ module "vpc_link_security_group" {
       cidr_blocks = ["0.0.0.0/0"]
       type        = "ingress"
       protocol    = "tcp"
-      from_port   = var.dns_name == "" ? 443 : 80
-      to_port     = var.dns_name == "" ? 443 : 80
+      from_port   = var.dns_name != "" ? 443 : 80
+      to_port     = var.dns_name != "" ? 443 : 80
     }]
   }
 }
