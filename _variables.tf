@@ -1,8 +1,3 @@
-variable "context" {
-  type    = any
-  default = null
-}
-
 variable "description" {
   type    = string
   default = ""
@@ -96,16 +91,10 @@ variable "vpc_links" {
   default = {}
 }
 
-
-variable "dns_enabled" {
-  type    = bool
-  default = false
-}
-
 variable "dns_name" {
   type        = string
   default     = ""
-  description = "Required if dns_enabled is true."
+  description = "Required Domain Name."
 }
 
 variable "route53_zone_ids" {

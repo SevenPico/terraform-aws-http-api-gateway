@@ -15,16 +15,29 @@
 ## ----------------------------------------------------------------------------
 
 ## ----------------------------------------------------------------------------
-##  ./_versions.tf
-##  This file contains code written only by SevenPico, Inc.
+##  ./_data.tf
+##  This file contains code written by SevenPico, Inc.
 ## ----------------------------------------------------------------------------
 
-terraform {
-  required_version = ">= 1.1.5"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 4.12.1"
-    }
-  }
+# The AWS region currently being used.
+data "aws_region" "current" {
+  count = module.context.enabled ? 1 : 0
 }
+
+# The AWS account id
+data "aws_caller_identity" "current" {
+  count = module.context.enabled ? 1 : 0
+}
+
+# The AWS partition (commercial or govcloud)
+data "aws_partition" "current" {
+  count = module.context.enabled ? 1 : 0
+}
+
+locals {
+  arn_prefix = "arn:${try(data.aws_partition.current[0].partition, "")}"
+  account_id = try(data.aws_caller_identity.current[0].account_id, "")
+  region     = try(data.aws_region.current[0].id, "")
+}
+
+
