@@ -114,8 +114,8 @@ resource "aws_apigatewayv2_vpc_link" "this" {
 
 module "vpc_link_security_group" {
   for_each = module.context.enabled ? var.vpc_links : {}
-  source  = "registry.terraform.io/SevenPicoForks/security-group/aws"
-  version = "3.0.0"
+  source   = "registry.terraform.io/SevenPicoForks/security-group/aws"
+  version  = "3.0.0"
 
   allow_all_egress              = true
   create_before_destroy         = true
