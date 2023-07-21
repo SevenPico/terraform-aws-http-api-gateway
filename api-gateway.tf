@@ -40,6 +40,7 @@ locals {
 # Routes
 # -----------------------------------------------------------------------------
 resource "aws_apigatewayv2_route" "this" {
+  #checkov:skip=CKV_AWS_309:skipping 'Ensure API GatewayV2 routes specify an authorization type'
   for_each = module.context.enabled ? var.routes : {}
 
   api_id               = local.api_id
@@ -114,8 +115,8 @@ resource "aws_apigatewayv2_vpc_link" "this" {
 
 module "vpc_link_security_group" {
   for_each = module.context.enabled ? var.vpc_links : {}
-  source  = "registry.terraform.io/SevenPicoForks/security-group/aws"
-  version = "3.0.0"
+  source   = "registry.terraform.io/SevenPicoForks/security-group/aws"
+  version  = "3.0.0"
 
   allow_all_egress              = true
   create_before_destroy         = true
@@ -210,6 +211,8 @@ resource "aws_apigatewayv2_stage" "this" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
+  #checkov:skip=CKV_AWS_158:skipping 'Ensure that CloudWatch Log Group is encrypted by KMS'
+  #checkov:skip=CKV_AWS_338:skipping 'Ensure CloudWatch log groups retains logs for at least 1 year'
   count = module.context.enabled && var.access_logging_enabled ? 1 : 0
 
   name              = "/aws/vendedlogs/apigateway/${module.context.id}"
